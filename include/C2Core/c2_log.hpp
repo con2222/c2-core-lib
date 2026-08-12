@@ -6,17 +6,17 @@
 
 namespace C2Core::Log {
 
-void Info(std::string_view message);
-void Info(const char* format, ...);
+void info(std::string_view message);
+void info(const char* format, ...);
 
-void Warning(std::string_view message);
-void Warning(const char* format, ...);
+void warning(std::string_view message);
+void warning(const char* format, ...);
 
-void Error(std::string_view message);
-void Error(const char* format, ...);
+void error(std::string_view message);
+void error(const char* format, ...);
 
-void ErrorDetailed(std::string_view message, const char* file, int line);
-void Trace(const char* colorCode, const char* format, ...);
+void errorDetailed(std::string_view message, const char* file, int line);
+void trace(const char* colorCode, const char* format, ...);
 
 } // C2Core::Log
 
