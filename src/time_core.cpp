@@ -1,11 +1,10 @@
 #include <C2Core/time_core.hpp>
-
+#include <algorithm>
 #include <chrono>
-#include <thread>
 #include <limits>
 #include <numeric>
+#include <thread>
 #include <vector>
-#include <algorithm>
 
 namespace C2Core::Time {
 
@@ -34,9 +33,15 @@ void destroy(Context* ctx) {
 }
 
 void startFrame(Context* ctx) {
-    uint64_t nowNs = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
-    if (ctx->lastTimeNs == 0) { ctx->lastTimeNs = nowNs; }
-    ctx->deltaTime = (nowNs - ctx->lastTimeNs) / 1'000'000'000.0 * ctx->timeScale;
+    uint64_t nowNs =
+        std::chrono::duration_cast<std::chrono::nanoseconds>(
+            std::chrono::high_resolution_clock::now().time_since_epoch())
+            .count();
+    if (ctx->lastTimeNs == 0) {
+        ctx->lastTimeNs = nowNs;
+    }
+    ctx->deltaTime =
+        (nowNs - ctx->lastTimeNs) / 1'000'000'000.0 * ctx->timeScale;
     ctx->accumulator += ctx->deltaTime;
     ctx->lastTimeNs = nowNs;
 };
@@ -52,30 +57,43 @@ bool consumeFixedUpdate(Context* ctx) {
 
 void endFrame(Context* ctx, WaitMode mode) {
     uint64_t targetFrameTimeNs = 1'000'000'000.0 / ctx->targetFPS;
-    uint64_t nowNs = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+    uint64_t nowNs =
+        std::chrono::duration_cast<std::chrono::nanoseconds>(
+            std::chrono::high_resolution_clock::now().time_since_epoch())
+            .count();
     uint64_t elapsedNs = nowNs - ctx->lastTimeNs;
 
     if (elapsedNs < targetFrameTimeNs) {
-        switch(mode) {
+        switch (mode) {
             case WaitMode::Sleep:
                 if (targetFrameTimeNs - elapsedNs > 0) {
-                    std::this_thread::sleep_for(std::chrono::nanoseconds(targetFrameTimeNs - elapsedNs));
+                    std::this_thread::sleep_for(std::chrono::nanoseconds(
+                        targetFrameTimeNs - elapsedNs));
                 }
                 break;
             case WaitMode::Spin:
                 while (elapsedNs < targetFrameTimeNs) {
-                    nowNs = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+                    nowNs =
+                        std::chrono::duration_cast<std::chrono::nanoseconds>(
+                            std::chrono::high_resolution_clock::now()
+                                .time_since_epoch())
+                            .count();
                     elapsedNs = nowNs - ctx->lastTimeNs;
                     std::this_thread::yield();
                 }
-                break;  
+                break;
             case WaitMode::Hybrid: {
                 uint64_t timeLeftNs = targetFrameTimeNs - elapsedNs;
                 if (timeLeftNs > 2'000'000) {
-                    std::this_thread::sleep_for(std::chrono::nanoseconds(timeLeftNs - 2'000'000));
+                    std::this_thread::sleep_for(
+                        std::chrono::nanoseconds(timeLeftNs - 2'000'000));
                 }
                 while (elapsedNs < targetFrameTimeNs) {
-                    nowNs = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+                    nowNs =
+                        std::chrono::duration_cast<std::chrono::nanoseconds>(
+                            std::chrono::high_resolution_clock::now()
+                                .time_since_epoch())
+                            .count();
                     elapsedNs = nowNs - ctx->lastTimeNs;
                     std::this_thread::yield();
                 }
@@ -86,7 +104,9 @@ void endFrame(Context* ctx, WaitMode mode) {
         }
     }
 
-    nowNs = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+    nowNs = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                std::chrono::high_resolution_clock::now().time_since_epoch())
+                .count();
     double elapsedMs = (nowNs - ctx->lastTimeNs) / 1'000'000.0;
     ctx->frameTimes[ctx->bufferIndex] = elapsedMs;
     ctx->bufferIndex++;
@@ -96,11 +116,14 @@ void endFrame(Context* ctx, WaitMode mode) {
 }
 
 Stats getStats(const Context* ctx) {
-    std::vector<double> times(std::begin(ctx->frameTimes), std::end(ctx->frameTimes));
-    std::sort(times.begin(), times.end(), [](double a, double b){ return a > b; });
+    std::vector<double> times(std::begin(ctx->frameTimes),
+                              std::end(ctx->frameTimes));
+    std::sort(times.begin(), times.end(),
+              [](double a, double b) { return a > b; });
 
     double frameSum = std::accumulate(times.begin(), times.end(), 0.0);
-    double tenTimesSum = std::accumulate(times.begin(), times.begin() + 10, 0.0);
+    double tenTimesSum =
+        std::accumulate(times.begin(), times.begin() + 10, 0.0);
     double averageFrameTime = frameSum / 1000.0;
     double averageOfWorst10Frames = tenTimesSum / 10;
 
@@ -113,11 +136,9 @@ Stats getStats(const Context* ctx) {
     return stats;
 }
 
-double getDeltaTime(const Context* ctx) { 
-    return ctx->deltaTime; 
-}
-void setTargetFPS(Context* ctx, double targetFps) { 
-    ctx->targetFPS = targetFps; 
+double getDeltaTime(const Context* ctx) { return ctx->deltaTime; }
+void setTargetFPS(Context* ctx, double targetFps) {
+    ctx->targetFPS = targetFps;
 }
 
-}; // C2Core::Time
+};  // namespace C2Core::Time

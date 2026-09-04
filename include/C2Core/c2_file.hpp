@@ -1,10 +1,9 @@
 #pragma once
 
+#include <optional>
 #include <string>
 #include <string_view>
-#include <optional>
-
 
 namespace C2Core::File {
-    std::optional<std::string> readText(std::string_view filepath);
+std::optional<std::string> readText(std::string_view filepath);
 }

@@ -1,16 +1,11 @@
 #ifndef TIME_CORE_H
 #define TIME_CORE_H
 
-
 namespace C2Core::Time {
 
 typedef struct Context Context;
 
-enum class WaitMode {
-    Sleep,
-    Spin,
-    Hybrid
-};
+enum class WaitMode { Sleep, Spin, Hybrid };
 
 struct Stats {
     double currentFps;
@@ -29,6 +24,6 @@ double getDeltaTime(const Context* ctx);
 void setTargetFPS(Context* ctx, double targetFps);
 Stats getStats(const Context* ctx);
 
-}; // C2Core::Time
+};  // namespace C2Core::Time
 
-#endif // TIME_CORE_H
+#endif  // TIME_CORE_H

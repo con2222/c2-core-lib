@@ -3,7 +3,6 @@
 
 #include <string_view>
 
-
 namespace C2Core::Log {
 
 void info(std::string_view message);
@@ -18,6 +17,6 @@ void error(const char* format, ...);
 void errorDetailed(std::string_view message, const char* file, int line);
 void trace(const char* colorCode, const char* format, ...);
 
-} // C2Core::Log
+}  // namespace C2Core::Log
 
-#endif // C2_LOG_HPP
+#endif  // C2_LOG_HPP

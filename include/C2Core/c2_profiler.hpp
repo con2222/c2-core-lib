@@ -1,24 +1,29 @@
 #ifndef C2_PROFILER_H
 #define C2_PROFILER_H
 
-#include <cstdint>
-#include <iostream>
 #include <chrono>
-#include <thread>
-#include <limits>
-#include <iomanip>
 #include <cmath>
+#include <cstdint>
+#include <iomanip>
+#include <iostream>
+#include <limits>
 #include <string>
+#include <thread>
 
 #if defined(_MSC_VER)
-#include <intrin.h>
+    #include <intrin.h>
 #else
-#include <x86intrin.h>
+    #include <x86intrin.h>
 #endif
 
 #if defined(_WIN32) || defined(_WIN64)
     #define NOMINMAX
+    #define WIN32_LEAN_AND_MEAN
+
+    #pragma warning(push)
+    #pragma warning(disable : 4005)
     #include <windows.h>
+    #pragma warning(pop)
 #elif defined(__linux__)
     #include <pthread.h>
     #include <sched.h>
@@ -33,8 +38,9 @@ bool pinThreadToCore(int coreId) {
     cpu_set_t cpuset;
     CPU_ZERO(&cpuset);
     CPU_SET(coreId, &cpuset);
-    return pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset) == 0;
-#else 
+    return pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset) ==
+           0;
+#else
     return false;
 #endif
 }
@@ -48,7 +54,7 @@ enum class TimeUnit {
 };
 
 class RdtscProfiler {
-public:
+   public:
     void start() {
         _mm_lfence();
         startTime = __rdtscp(&startCore);
@@ -62,17 +68,16 @@ public:
         _mm_lfence();
         if (startCore != endCore) {
 #ifndef NDEBUG
-            std::cerr << "[Warning] CPU core migration detected! Start core: " 
-                      << startCore << ", End core: " << endCore 
+            std::cerr << "[Warning] CPU core migration detected! Start core: "
+                      << startCore << ", End core: " << endCore
                       << ". Measurement may be inaccurate.\n";
 #endif
         }
     }
 
-    uint64_t elapsed() const {
-        return endTime - startTime;
-    }
-private:
+    uint64_t elapsed() const { return endTime - startTime; }
+
+   private:
     uint64_t startTime = 0;
     uint64_t endTime = 0;
     uint32_t startCore = 0;
@@ -80,13 +85,13 @@ private:
 };
 
 class ScopedProfiler {
-public:
-    ScopedProfiler(std::string name, TimeUnit timeUnit = TimeUnit::Milliseconds) 
+   public:
+    ScopedProfiler(std::string name, TimeUnit timeUnit = TimeUnit::Milliseconds)
         : name(std::move(name)), ticks(nullptr), timeFormat(timeUnit) {
         profiler.start();
     }
 
-    ScopedProfiler(uint64_t& ticks, TimeUnit timeUnit = TimeUnit::Milliseconds) 
+    ScopedProfiler(uint64_t& ticks, TimeUnit timeUnit = TimeUnit::Milliseconds)
         : ticks(&ticks), timeFormat(timeUnit) {
         profiler.start();
     }
@@ -96,13 +101,13 @@ public:
         if (ticks != nullptr) {
             *ticks = convertCycles(profiler.elapsed(), timeFormat);
         } else {
-            std::cout << "[Profiler] " << name << " took " 
-                      << convertCycles(profiler.elapsed(), timeFormat) 
+            std::cout << "[Profiler] " << name << " took "
+                      << convertCycles(profiler.elapsed(), timeFormat)
                       << getUnitName(timeFormat) << ".\n";
         }
     }
 
-private:
+   private:
     static uint64_t& getFrequency() {
         static uint64_t freq = calibrateFrequency();
         return freq;
@@ -116,27 +121,41 @@ private:
     uint64_t convertCycles(uint64_t cycles, TimeUnit format) {
         uint64_t overhead = getOverhead();
         uint64_t frequency = getFrequency();
-        
+
         cycles = cycles < overhead ? 0 : cycles - overhead;
 
         switch (format) {
-            case TimeUnit::Cycles:       return cycles;
-            case TimeUnit::Seconds:      return cycles / frequency;
-            case TimeUnit::Milliseconds: return cycles * 1000 / frequency;
-            case TimeUnit::Microseconds: return cycles * 1000000 / frequency;
-            case TimeUnit::Nanoseconds:  return static_cast<uint64_t>((static_cast<long double>(cycles) * 1'000'000'000L) / static_cast<long double>(frequency));
-            default:                     return 0;
+            case TimeUnit::Cycles:
+                return cycles;
+            case TimeUnit::Seconds:
+                return cycles / frequency;
+            case TimeUnit::Milliseconds:
+                return cycles * 1000 / frequency;
+            case TimeUnit::Microseconds:
+                return cycles * 1000000 / frequency;
+            case TimeUnit::Nanoseconds:
+                return static_cast<uint64_t>(
+                    (static_cast<long double>(cycles) * 1'000'000'000L) /
+                    static_cast<long double>(frequency));
+            default:
+                return 0;
         }
     }
 
     const char* getUnitName(TimeUnit format) {
         switch (format) {
-            case TimeUnit::Cycles:       return " cycles";
-            case TimeUnit::Seconds:      return " s";
-            case TimeUnit::Milliseconds: return " ms";
-            case TimeUnit::Microseconds: return " us";
-            case TimeUnit::Nanoseconds:  return " ns";
-            default:                     return "";
+            case TimeUnit::Cycles:
+                return " cycles";
+            case TimeUnit::Seconds:
+                return " s";
+            case TimeUnit::Milliseconds:
+                return " ms";
+            case TimeUnit::Microseconds:
+                return " us";
+            case TimeUnit::Nanoseconds:
+                return " ns";
+            default:
+                return "";
         }
     }
 
@@ -153,7 +172,9 @@ private:
         _mm_lfence();
         auto endTime = std::chrono::steady_clock::now();
 
-        auto elapsedNs = std::chrono::duration_cast<std::chrono::nanoseconds>(endTime - startTime).count();
+        auto elapsedNs = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                             endTime - startTime)
+                             .count();
         if (elapsedNs == 0) return 1;
 
         return ((endCycles - startCycles) * 1'000'000'000ULL) / elapsedNs;
@@ -180,9 +201,8 @@ private:
 };
 
 class StatsAccumulator {
-public:
-    StatsAccumulator() {
-    }
+   public:
+    StatsAccumulator() {}
 
     void add(uint64_t cycles) {
         counter++;
@@ -199,17 +219,14 @@ public:
         m2 += delta * delta2;
     }
 
-    double getVariance() const {
-        return counter ? m2 / counter : 0.0;
-    }
+    double getVariance() const { return counter ? m2 / counter : 0.0; }
 
     uint64_t getMin() const { return min; }
     uint64_t getMax() const { return max; }
     uint64_t getCounter() const { return counter; }
     double getMean() const { return mean; }
 
-
-    private:
+   private:
     uint64_t counter = 0;
     uint64_t sum = 0;
     uint64_t min = std::numeric_limits<uint64_t>::max();
@@ -218,11 +235,13 @@ public:
     double m2 = 0.0;
 };
 
-template<typename Func>
+template <typename Func>
 StatsAccumulator runBenchmark(uint32_t steps, Func func) {
     StatsAccumulator stats;
-    for (size_t i = 0; i < 100; i++) { func(); }
-    
+    for (size_t i = 0; i < 100; i++) {
+        func();
+    }
+
     uint64_t cycles = 0;
     for (uint32_t i = 0; i < steps; i++) {
         {
@@ -235,7 +254,7 @@ StatsAccumulator runBenchmark(uint32_t steps, Func func) {
 }
 
 class BenchmarkReporter {
-public:
+   public:
     static void print(const std::string& name, const StatsAccumulator& stats) {
         double stdDev = std::sqrt(stats.getVariance());
 
@@ -243,17 +262,20 @@ public:
         std::cout << " Benchmark:  " << name << "\n";
         std::cout << " Iterations: " << stats.getCounter() << "\n";
         std::cout << "-------------------------------------------------\n";
-        
-        std::cout << std::left << std::setw(15) << " Min:"    << stats.getMin() << " cycles\n";
-        std::cout << std::left << std::setw(15) << " Max:"    << stats.getMax() << " cycles\n";
-        std::cout << std::left << std::setw(15) << " Mean:"   << stats.getMean() << " cycles\n";
-        std::cout << std::left << std::setw(15) << " StdDev:" << stdDev << " cycles\n";
-        
+
+        std::cout << std::left << std::setw(15) << " Min:" << stats.getMin()
+                  << " cycles\n";
+        std::cout << std::left << std::setw(15) << " Max:" << stats.getMax()
+                  << " cycles\n";
+        std::cout << std::left << std::setw(15) << " Mean:" << stats.getMean()
+                  << " cycles\n";
+        std::cout << std::left << std::setw(15) << " StdDev:" << stdDev
+                  << " cycles\n";
+
         std::cout << "=================================================\n\n";
     }
 };
 
-} // namespace C2Core::Profiler
-
+}  // namespace C2Core::Profiler
 
 #endif
