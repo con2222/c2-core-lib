@@ -56,6 +56,9 @@ bool consumeFixedUpdate(Context* ctx) {
 }
 
 void endFrame(Context* ctx, WaitMode mode) {
+    if (ctx->targetFPS == 0) {  // Unlimited fps
+        return;
+    }
     uint64_t targetFrameTimeNs = 1'000'000'000.0 / ctx->targetFPS;
     uint64_t nowNs =
         std::chrono::duration_cast<std::chrono::nanoseconds>(
