@@ -4,9 +4,6 @@
 #include <cstdio>
 #include <iostream>
 
-#define C2_ERROR(message) \
-    C2Core::Log::ErrorDetailed(message, __FILE__, __LINE__)
-
 namespace C2Core::Log {
 
 constexpr size_t BUFFER_SIZE = 1024;

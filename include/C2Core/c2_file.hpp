@@ -5,5 +5,5 @@
 #include <string_view>
 
 namespace C2Core::File {
-std::optional<std::string> readText(std::string_view filepath);
+std::optional<std::string> readText(const std::string& filepath);
 }

@@ -3,6 +3,9 @@
 
 #include <string_view>
 
+#define C2_ERROR(message) \
+    C2Core::Log::errorDetailed(message, __FILE__, __LINE__)
+
 namespace C2Core::Log {
 
 void info(std::string_view message);
