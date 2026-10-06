@@ -33,10 +33,9 @@ void destroy(Context* ctx) {
 }
 
 void startFrame(Context* ctx) {
-    uint64_t nowNs =
-        std::chrono::duration_cast<std::chrono::nanoseconds>(
-            std::chrono::high_resolution_clock::now().time_since_epoch())
-            .count();
+    uint64_t nowNs = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                         std::chrono::steady_clock::now().time_since_epoch())
+                         .count();
     if (ctx->lastTimeNs == 0) {
         ctx->lastTimeNs = nowNs;
     }
@@ -60,10 +59,9 @@ void endFrame(Context* ctx, WaitMode mode) {
         return;
     }
     uint64_t targetFrameTimeNs = 1'000'000'000.0 / ctx->targetFPS;
-    uint64_t nowNs =
-        std::chrono::duration_cast<std::chrono::nanoseconds>(
-            std::chrono::high_resolution_clock::now().time_since_epoch())
-            .count();
+    uint64_t nowNs = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                         std::chrono::steady_clock::now().time_since_epoch())
+                         .count();
     uint64_t elapsedNs = nowNs - ctx->lastTimeNs;
 
     if (elapsedNs < targetFrameTimeNs) {
@@ -78,8 +76,7 @@ void endFrame(Context* ctx, WaitMode mode) {
                 while (elapsedNs < targetFrameTimeNs) {
                     nowNs =
                         std::chrono::duration_cast<std::chrono::nanoseconds>(
-                            std::chrono::high_resolution_clock::now()
-                                .time_since_epoch())
+                            std::chrono::steady_clock::now().time_since_epoch())
                             .count();
                     elapsedNs = nowNs - ctx->lastTimeNs;
                     std::this_thread::yield();
@@ -94,8 +91,7 @@ void endFrame(Context* ctx, WaitMode mode) {
                 while (elapsedNs < targetFrameTimeNs) {
                     nowNs =
                         std::chrono::duration_cast<std::chrono::nanoseconds>(
-                            std::chrono::high_resolution_clock::now()
-                                .time_since_epoch())
+                            std::chrono::steady_clock::now().time_since_epoch())
                             .count();
                     elapsedNs = nowNs - ctx->lastTimeNs;
                     std::this_thread::yield();
@@ -108,7 +104,7 @@ void endFrame(Context* ctx, WaitMode mode) {
     }
 
     nowNs = std::chrono::duration_cast<std::chrono::nanoseconds>(
-                std::chrono::high_resolution_clock::now().time_since_epoch())
+                std::chrono::steady_clock::now().time_since_epoch())
                 .count();
     double elapsedMs = (nowNs - ctx->lastTimeNs) / 1'000'000.0;
     ctx->frameTimes[ctx->bufferIndex] = elapsedMs;
