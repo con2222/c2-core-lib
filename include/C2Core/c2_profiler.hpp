@@ -11,27 +11,27 @@
 #include <thread>
 
 #if defined(_MSC_VER)
-    #include <intrin.h>
+#include <intrin.h>
 #else
-    #include <x86intrin.h>
+#include <x86intrin.h>
 #endif
 
 #if defined(_WIN32) || defined(_WIN64)
-    #define NOMINMAX
-    #define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#define WIN32_LEAN_AND_MEAN
 
-    #pragma warning(push)
-    #pragma warning(disable : 4005)
-    #include <windows.h>
-    #pragma warning(pop)
+#pragma warning(push)
+#pragma warning(disable : 4005)
+#include <windows.h>
+#pragma warning(pop)
 #elif defined(__linux__)
-    #include <pthread.h>
-    #include <sched.h>
+#include <pthread.h>
+#include <sched.h>
 #endif
 
 namespace C2Core::Profiler {
 
-bool pinThreadToCore(int coreId) {
+inline bool pinThreadToCore(int coreId) {
 #if defined(_WIN32) || defined(_WIN64)
     return SetThreadAffinityMask(GetCurrentThread(), 1ULL << coreId) != 0;
 #elif defined(__linux__)
